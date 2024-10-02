@@ -90,13 +90,10 @@ def show_dashboard(responses):
         st.write(f"**{goal}**: {goal_detail}")
 
     # User input for future year
-    year_input = st.number_input("Enter a future year:", min_value=date.today().year, step=1)
-    
-    # Calculate and show projected account values for the input year
     current_year = date.today().year
-    years_to_calculate = year_input - current_year
+    years_to_calculate = responses['future_year'] - current_year
 
-    st.write(f"Projected Account Values for {year_input}:")
+    st.write(f"Projected Account Values for {responses['future_year']}:")
     future_values = {}
     for account in responses['accounts']:
         account_name, _, interest_rate, balance = account
@@ -109,7 +106,7 @@ def show_dashboard(responses):
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.bar(future_values.keys(), future_values.values(), color='skyblue')
     ax.set_ylabel('Projected Value ($)')
-    ax.set_title(f'Projected Account Values in {year_input}')
+    ax.set_title(f'Projected Account Values in {responses["future_year"]}')
     plt.xticks(rotation=45)
     st.pyplot(fig)
 
@@ -180,6 +177,9 @@ def main():
         goal_detail = st.text_input(f"Describe your goal for: {goal}", key=goal)
         if goal_detail:
             responses['goals'][goal] = goal_detail
+
+    # Input for future year before showing dashboard
+    responses['future_year'] = st.number_input("Enter a future year for projections:", min_value=current_year, step=1)
 
     # Show dashboard
     if st.button("Show Dashboard"):
