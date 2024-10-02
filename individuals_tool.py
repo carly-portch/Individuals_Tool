@@ -2,27 +2,15 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import date
-import current_you  # Import the Current You tool script
 
-import streamlit as st
-
-# Other parts of your script...
-
+# Function to dynamically load and execute the Current You tool script
 def run_current_you_tool():
-    # When button is pressed, load the Current You tool dynamically
-    with open("current_you.py") as file:
-        exec(file.read())
-
-def main():
-    st.title("Financial Planning App")
-    
-    # Your existing app code...
-    
-    if st.button("Go to Current You Tool"):
-        run_current_you_tool()
-
-if __name__ == "__main__":
-    main()
+    try:
+        # Open and execute the current_you.py script
+        with open("current_you.py") as file:
+            exec(file.read())
+    except Exception as e:
+        st.error(f"An error occurred while running the Current You tool: {str(e)}")
 
 # Function to calculate age from birthday
 def calculate_age(birthday):
@@ -192,8 +180,7 @@ def main():
 
         # Button to navigate to Current You tool
         if st.button("Go to Current You Tool"):
-            st.session_state.navigate_to_current_you = True
-            current_you.run_current_you_tool()  # Call the Current You tool function
+            run_current_you_tool()  # Call the Current You tool function
 
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
