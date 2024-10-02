@@ -11,23 +11,13 @@ def calculate_age(birthday):
     return age
 
 # Function to calculate future value with monthly contributions
-def calculate_future_value(principal, annual_rate, years, monthly_contribution, frequency):
+def calculate_future_value(principal, annual_rate, years, monthly_contribution):
     # Convert annual rate to a monthly rate
     monthly_rate = annual_rate / 100 / 12
     
-    # Number of contributions based on frequency
-    if frequency == 'Monthly':
-        total_contributions = years * 12
-    elif frequency == 'Bi-weekly':
-        total_contributions = years * 26
-    elif frequency == 'Weekly':
-        total_contributions = years * 52
-    else:
-        total_contributions = 0  # Handle unexpected frequency
-
     # Future Value calculation
-    future_value = principal * (1 + monthly_rate) ** total_contributions
-    future_value += monthly_contribution * (((1 + monthly_rate) ** total_contributions - 1) / monthly_rate)
+    future_value = principal * (1 + monthly_rate) ** (years * 12)
+    future_value += monthly_contribution * (((1 + monthly_rate) ** (years * 12) - 1) / monthly_rate)
     return future_value
 
 # Function to visualize income distribution into buckets
@@ -83,7 +73,7 @@ def show_dashboard(responses):
     st.write(f"**Occupation Status**: {responses['occupation_status']}")
     
     if responses['occupation_status'] == 'Employed':
-        st.write(f"**Paycheck**: ${responses['paycheck']} at {responses['paycheck_frequency']}")
+        st.write(f"**Monthly Take-home Pay After Tax**: ${responses['paycheck']}")
     elif responses['occupation_status'] == 'Student' and responses.get('student_income'):
         st.write(f"**Part-time income during school**: ${responses['student_income']}")
 
@@ -109,7 +99,7 @@ def show_dashboard(responses):
     for account in responses['accounts']:
         account_name, _, interest_rate, balance = account
         allocation = responses['allocations'].get(account_name, 0)  # Get allocation for this account
-        future_value = calculate_future_value(balance, interest_rate, years_to_calculate, allocation, responses['paycheck_frequency'])
+        future_value = calculate_future_value(balance, interest_rate, years_to_calculate, allocation)
         future_values[account_name] = future_value
         st.write(f"**{account_name}**: ${future_value:.2f}")
 
@@ -146,10 +136,9 @@ def main():
     responses['occupation_status'] = st.selectbox("Current occupation status:", 
                                                     ["Unemployed", "Student", "Employed", "Maternity/Paternity Leave"])
 
-    # Input for paycheck if employed
+    # Input for monthly take-home pay
     if responses['occupation_status'] == "Employed":
-        responses['paycheck'] = st.number_input("What is your paycheck amount?", min_value=0)
-        responses['paycheck_frequency'] = st.selectbox("How frequently do you get paid?", ["Monthly", "Bi-weekly", "Weekly"])
+        responses['paycheck'] = st.number_input("What is your monthly take-home pay after tax?", min_value=0.0)
 
     # Accounts input
     st.subheader("Tell us about your existing bank accounts:")
@@ -174,7 +163,7 @@ def main():
 
     # Capture allocations after adding accounts
     if responses['accounts']:
-        st.subheader("How much would you like to allocate from your paycheck into each account?")
+        st.subheader("How much would you like to allocate from your monthly take-home pay into each account?")
         for account in responses['accounts']:
             account_name = account[0]
             allocation = st.number_input(f"Allocation for {account_name}:", min_value=0.0, key=account_name)
