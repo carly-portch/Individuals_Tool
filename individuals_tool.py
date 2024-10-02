@@ -74,23 +74,22 @@ def main():
     # Add accounts
     st.header("Add Your Bank Accounts")
     
-    while True:
-        account_name = st.text_input("Account Name (e.g., Chequing, HYSA, etc.)")
+    # Use a form to keep the account addition inputs together
+    with st.form("account_form"):
+        account_name = st.text_input("Account Name (e.g., Chequing, HYSA, etc.)", key="account_name")
         account_type = st.selectbox("Account Type (e.g., HYSA, Regular Savings, etc.)", 
-                                     ["HYSA", "Regular Savings", "Invested", "Registered"])
-        interest_rate = st.number_input("Interest Rate (%)")
-        principal = st.number_input("Current Amount in Account ($)")
-        contribution = st.number_input("Monthly Contribution Amount ($)")
+                                     ["HYSA", "Regular Savings", "Invested", "Registered"], key="account_type")
+        interest_rate = st.number_input("Interest Rate (%)", key="interest_rate")
+        principal = st.number_input("Current Amount in Account ($)", key="principal")
+        contribution = st.number_input("Monthly Contribution Amount ($)", key="contribution")
 
-        if st.button("Add Account"):
+        if st.form_submit_button("Add Account"):
             st.session_state.accounts.append((account_name, account_type, interest_rate, principal, contribution))
             st.experimental_rerun()
-        
-        if st.session_state.accounts:
-            responses['accounts'] = st.session_state.accounts
 
     # Show dashboard after accounts are added
     if st.button("Show Dashboard"):
+        responses['accounts'] = st.session_state.accounts  # Ensure accounts are updated
         show_dashboard(responses)
 
 # Show the dashboard
