@@ -125,7 +125,7 @@ def main():
         responses = st.session_state.responses
 
         # Create two columns with specified widths
-        col1, col2 = st.columns([1, 3])  # 1 part for the left column (20%), 4 parts for the right column (80%)
+        col1, col2 = st.columns([1, 3])  # 1 part for the left column (33%), 4 parts for the right column (66%)
 
         with col1:
             # Input for birthday
@@ -156,11 +156,24 @@ def main():
                     responses['accounts'].append((acc_name, acc_type, interest_rate, balance))
                     st.success(f"Added {acc_name} successfully!")
 
-            # Show all added accounts
+            # Show all added accounts with delete button
             st.write("### Current Accounts:")
             if responses['accounts']:
-                accounts_df = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance'])
-                st.write(accounts_df)
+                accounts_to_display = []
+                for idx, account in enumerate(responses['accounts']):
+                    account_name, acc_type, interest_rate, balance = account
+                    # Create a row for each account
+                    row = f"{account_name} ({acc_type}) - Interest: {interest_rate}%, Balance: ${balance:.2f} "
+                    # Add a delete button next to each account
+                    if st.button(f"Delete {account_name}", key=f"delete_{idx}"):
+                        responses['accounts'].pop(idx)  # Remove the account from the list
+                        st.success(f"Deleted {account_name} successfully!")
+                        st.experimental_rerun()  # Rerun the app to refresh the state
+                    else:
+                        accounts_to_display.append(row)
+                # Display all accounts
+                for account_row in accounts_to_display:
+                    st.write(account_row)
 
             # Capture allocations after adding accounts
             if responses['accounts']:
