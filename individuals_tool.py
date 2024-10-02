@@ -1,4 +1,5 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 from datetime import date
 import pandas as pd
 
@@ -7,6 +8,44 @@ def calculate_age(birthdate):
     today = date.today()
     age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
     return age
+
+# Function to visualize income distribution into buckets
+def visualize_buckets(responses):
+    st.subheader("Income Distribution Visualization")
+
+    # Check if the user is employed
+    if responses['occupation_status'] != "Employed":
+        st.write("This visualization is only available for employed users.")
+        return
+
+    # Get the number of accounts and calculate equal distribution
+    num_accounts = len(responses['accounts'])
+    paycheck = responses['paycheck']
+    income_per_bucket = paycheck / num_accounts
+
+    # Set up figure
+    fig, ax = plt.subplots(figsize=(8, 4))
+
+    # Draw an arrow representing income
+    ax.arrow(-1, 0.5, 1.5, 0, head_width=0.1, head_length=0.2, fc='green', ec='green')
+    ax.text(-1.5, 0.45, 'Income', fontsize=12, color='green')
+
+    # Draw buckets (as rectangles) and label them
+    bucket_names = [acc[0] for acc in responses['accounts']]
+    for i, account in enumerate(bucket_names):
+        ax.add_patch(plt.Rectangle((i, 0.3), 0.5, 0.5, fill=True, color='lightblue', edgecolor='black'))
+        ax.text(i + 0.05, 0.6, account, fontsize=10, ha='center')
+
+        # Label the amount that goes into each bucket
+        ax.text(i + 0.25, 0.2, f"${income_per_bucket:.2f}", fontsize=10, color='blue', ha='center')
+
+    # Hide axis
+    ax.set_xlim([-2, num_accounts])
+    ax.set_ylim([0, 1])
+    ax.axis('off')
+
+    # Show the plot
+    st.pyplot(fig)
 
 # Function to display the dashboard based on user responses
 def show_dashboard(responses):
@@ -18,13 +57,16 @@ def show_dashboard(responses):
     st.write(f"**Occupation Status**: {responses['occupation_status']}")
     
     if responses['occupation_status'] == 'Employed':
-        st.write(f"**Paycheck**: {responses['paycheck']} at {responses['paycheck_frequency']} frequency")
+        st.write(f"**Paycheck**: ${responses['paycheck']} at {responses['paycheck_frequency']} frequency")
     elif responses['occupation_status'] == 'Student' and responses.get('student_income'):
-        st.write(f"**Part-time income during school**: {responses['student_income']}")
+        st.write(f"**Part-time income during school**: ${responses['student_income']}")
 
     st.subheader("Your Accounts:")
     accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate', 'Balance', 'Automated Deposit'])
     st.write(accounts)
+
+    # Visualize the income being distributed into accounts
+    visualize_buckets(responses)
 
     # Goal-based dashboard elements
     st.subheader("Your Financial Goals:")
@@ -109,4 +151,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
