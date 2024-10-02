@@ -56,6 +56,11 @@ def visualize_buckets(responses):
     # Show the plot
     st.pyplot(fig)
 
+# Function to calculate future account values with compound interest
+def calculate_future_value(principal, rate, years, compounding_per_year=12):
+    """Calculate the future value of an investment."""
+    return principal * (1 + rate / (100 * compounding_per_year)) ** (compounding_per_year * years)
+
 # Function to display the dashboard based on user responses
 def show_dashboard(responses):
     st.title("Your Personalized Financial Dashboard")
@@ -71,7 +76,7 @@ def show_dashboard(responses):
         st.write(f"**Part-time income during school**: ${responses['student_income']}")
 
     st.subheader("Your Accounts:")
-    accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate', 'Balance', 'Automated Deposit', 'User Allocation'])
+    accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance', 'Automated Deposit', 'User Allocation'])
     st.write(accounts)
 
     # Visualize the income being distributed into accounts
@@ -81,6 +86,31 @@ def show_dashboard(responses):
     st.subheader("Your Financial Goals:")
     for goal, goal_detail in responses['goals'].items():
         st.write(f"**{goal}**: {goal_detail}")
+
+    # Snapshot feature for future account values
+    st.subheader("Account Snapshot for a Future Year")
+    year_input = st.number_input("Enter a future year:", min_value=date.today().year, step=1)
+    
+    if st.button("Calculate Snapshot"):
+        snapshot_year = year_input
+        current_year = date.today().year
+        years_to_calculate = snapshot_year - current_year
+        
+        st.write("Projected Account Values:")
+        future_values = {}
+        for account in responses['accounts']:
+            account_name, _, interest_rate, balance, _, _ = account
+            future_value = calculate_future_value(balance, interest_rate, years_to_calculate)
+            future_values[account_name] = future_value
+            st.write(f"**{account_name}**: ${future_value:.2f}")
+
+        # Optionally, show a visualization for future values
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.bar(future_values.keys(), future_values.values(), color='skyblue')
+        ax.set_ylabel('Projected Value ($)')
+        ax.set_title(f'Projected Account Values in {snapshot_year}')
+        plt.xticks(rotation=45)
+        st.pyplot(fig)
 
     st.write("You can further personalize your dashboard or add more goals from the side panel.")
 
@@ -110,12 +140,6 @@ def main():
         student_income = st.number_input("Do you have any part-time job income during the school year?", min_value=0, step=100)
         responses['student_income'] = student_income
 
-    # Ask for relationship status
-    relationship_status = st.radio("What is your current relationship status?", 
-                                   ["Single", "In a relationship but not ready to plan finances together yet", 
-                                    "In a relationship and ready to plan finances together"])
-    responses['relationship_status'] = relationship_status
-
     # Ask about bank accounts
     st.subheader("Tell us about your existing or planned bank accounts:")
     account_names = []
@@ -130,7 +154,7 @@ def main():
         st.write("Enter details for a new account:")
         account_name = st.text_input("Account Name (e.g., Chequing, HYSA, TFSA, etc.)", key=f"acc_name_{len(account_names)}")
         account_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"], key=f"acc_type_{len(account_names)}")
-        interest_rate = st.number_input("Interest Rate (optional)", value=0.0, step=0.1, key=f"int_rate_{len(account_names)}")
+        interest_rate = st.number_input("Interest Rate (%) (optional)", value=0.0, step=0.1, key=f"int_rate_{len(account_names)}")
         balance = st.number_input(f"How much is currently in your {account_name} account?", min_value=0, step=100, key=f"balance_{len(account_names)}")
         auto_deposit = st.number_input(f"How much do you currently auto-deposit into your {account_name} account?", min_value=0, step=50, key=f"auto_deposit_{len(account_names)}")
         
@@ -158,17 +182,16 @@ def main():
     # Ask for goals
     st.subheader("What type of goals do you want to focus on today?")
     goal_types = st.multiselect("Choose your financial goals", 
-                                ["This year", "Short-term (1-5 years)", "Long-term (5-15 years)", 
-                                 "Retirement", "Debt payments", "House deposit/mortgage"])
-
+                                ["This year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
+    
+    # Capture goal details
     responses['goals'] = {}
     for goal in goal_types:
-        goal_detail = st.text_input(f"Tell us more about your {goal} goal", key=f"goal_{goal}")
+        goal_detail = st.text_input(f"Please specify details for your goal: {goal}")
         responses['goals'][goal] = goal_detail
 
-    # Submit button to show dashboard
-    if st.button("Submit"):
-        show_dashboard(responses)
+    # Show the dashboard based on the responses collected
+    show_dashboard(responses)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
