@@ -125,6 +125,12 @@ def show_dashboard(responses):
         plt.xticks(rotation=45)
         st.pyplot(fig)
 
+    # Show any previously calculated snapshots if available
+    if 'snapshot_data' in st.session_state:
+        st.write("Previously calculated snapshot values:")
+        for account, value in st.session_state.snapshot_data.items():
+            st.write(f"**{account}**: ${value:.2f}")
+
     st.write("You can further personalize your dashboard or add more goals from the side panel.")
 
 # Main function to run the app
