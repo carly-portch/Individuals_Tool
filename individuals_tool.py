@@ -1,14 +1,3 @@
-import streamlit as st
-import matplotlib.pyplot as plt
-from datetime import date
-import pandas as pd
-
-# Function to calculate user's age
-def calculate_age(birthdate):
-    today = date.today()
-    age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
-    return age
-
 # Function to visualize income distribution into buckets
 def visualize_buckets(responses):
     st.subheader("Income Distribution Visualization")
@@ -34,7 +23,7 @@ def visualize_buckets(responses):
 
     # Buckets (as rectangles) with user-defined allocations
     bucket_names = [acc[0] for acc in responses['accounts']]
-    allocations = [acc[5] for acc in responses['accounts']]  # User-defined allocations
+    allocations = [acc[4] for acc in responses['accounts']]  # Change the index to 4 for User Allocation
 
     for i, account in enumerate(bucket_names):
         bucket_height = allocations[i] / paycheck if paycheck > 0 else 0
@@ -55,28 +44,6 @@ def visualize_buckets(responses):
 
     # Show the plot
     st.pyplot(fig)
-
-# Function to calculate future account values with compound interest
-def calculate_future_value(principal, rate, years, contribution, frequency, compounding_per_year=12):
-    """Calculate the future value of an investment."""
-    # Determine the number of contributions based on frequency
-    if frequency == 'Monthly':
-        n = compounding_per_year
-    elif frequency == 'Bi-weekly':
-        n = compounding_per_year / 2
-    elif frequency == 'Weekly':
-        n = compounding_per_year / 4
-    else:
-        n = compounding_per_year  # Default to monthly if "Other"
-
-    # Compound interest formula
-    future_value = principal * (1 + rate / (100 * compounding_per_year)) ** (compounding_per_year * years)
-    
-    # Calculate future value of contributions
-    if contribution > 0:
-        future_value += contribution * (((1 + rate / (100 * compounding_per_year)) ** (n * years) - 1) / (rate / (100 * compounding_per_year)))
-    
-    return future_value
 
 # Function to display the dashboard based on user responses
 def show_dashboard(responses):
@@ -130,80 +97,3 @@ def show_dashboard(responses):
         st.pyplot(fig)
 
     st.write("You can further personalize your dashboard or add more goals from the side panel.")
-
-# Streamlit app logic
-def main():
-    st.title("Financial Planning for 20-Somethings")
-
-    # Store user responses
-    responses = {}
-
-    # Ask for birthday and calculate age
-    birthday = st.date_input("When is your birthday?")
-    age = calculate_age(birthday)
-    responses['age'] = age
-
-    # Ask for occupation status
-    occupation_status = st.radio("What is your current occupation status?", 
-                                 ["Unemployed", "Student", "Employed", "Maternity/Paternity Leave", "Other"])
-    responses['occupation_status'] = occupation_status
-
-    if occupation_status == "Employed":
-        paycheck = st.number_input("What is your paycheck?", min_value=0, step=100)
-        paycheck_frequency = st.selectbox("How frequently do you get paid?", ["Monthly", "Bi-weekly", "Weekly", "Other"])
-        responses['paycheck'] = paycheck
-        responses['paycheck_frequency'] = paycheck_frequency
-    elif occupation_status == "Student":
-        student_income = st.number_input("Do you have any part-time job income during the school year?", min_value=0, step=100)
-        responses['student_income'] = student_income
-
-    # Ask about bank accounts
-    st.subheader("Tell us about your existing or planned bank accounts:")
-    account_names = []
-    account_types = []
-    interest_rates = []
-    balances = []
-    allocations = []
-    
-    add_account = True
-    while add_account:
-        st.write("Enter details for a new account:")
-        account_name = st.text_input("Account Name (e.g., Chequing, HYSA, TFSA, etc.)", key=f"acc_name_{len(account_names)}")
-        account_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"], key=f"acc_type_{len(account_names)}")
-        interest_rate = st.number_input("Interest Rate (%) (optional)", value=0.0, step=0.1, key=f"int_rate_{len(account_names)}")
-        balance = st.number_input(f"How much is currently in your {account_name} account?", min_value=0, step=100, key=f"balance_{len(account_names)}")
-        
-        # User-defined allocation input using sliders
-        max_allocation = responses['paycheck'] if 'paycheck' in responses else 0
-        allocation = st.slider(f"How much of your paycheck do you want to allocate to {account_name}?", min_value=0, max_value=max_allocation, step=10, key=f"allocation_{len(account_names)}")
-
-        account_names.append(account_name)
-        account_types.append(account_type)
-        interest_rates.append(interest_rate)
-        balances.append(balance)
-        allocations.append(allocation)
-
-        add_account = st.checkbox("Add another account?", key=f"add_account_{len(account_names)}")
-
-    responses['accounts'] = list(zip(account_names, account_types, interest_rates, balances, allocations))
-
-    # Validate total allocations do not exceed paycheck
-    total_allocated = sum(allocations)
-    if total_allocated > responses['paycheck']:
-        st.warning("Total allocations exceed your paycheck. Please adjust your allocations.")
-
-    # Capture goal details
-    goal_types = st.multiselect("What type of goals do you want to focus on today?", 
-                                ["This Year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
-    
-    # Capture goals
-    responses['goals'] = {}
-    for goal in goal_types:
-        goal_detail = st.text_input(f"Please specify details for your goal: {goal}")
-        responses['goals'][goal] = goal_detail
-
-    # Show the dashboard based on the responses collected
-    show_dashboard(responses)
-
-if __name__ == "__main__":
-    main()
