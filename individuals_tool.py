@@ -174,7 +174,7 @@ def main():
         if st.button("Show Dashboard"):
             show_dashboard(responses)
 
-            # Button to open Current You Tool
+    # Button to open Current You Tool
     if st.button("Open Current You Tool"):
         # Use the 'st.markdown' to create a link that opens in a new window
         st.markdown(
@@ -182,8 +182,9 @@ def main():
             unsafe_allow_html=True
         )
 
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+if __name__ == "__main__":
+    main()
+
 
 
 # Run the app
