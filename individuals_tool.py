@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 from datetime import date
 
 # Function to dynamically load and execute the Current You tool script
-def run_current_you_tool():
-    try:
-        # Open and execute the current_you.py script
-        with open("current_you.py") as file:
-            exec(file.read())
-    except Exception as e:
-        st.error(f"An error occurred while running the Current You tool: {str(e)}")
+ # Button to open Current You Tool
+    if st.button("Open Current You Tool"):
+        # Use the 'st.markdown' to create a link that opens in a new window
+        st.markdown(
+            '<a href="https://current-you.streamlit.app/" target="_blank" rel="noopener noreferrer">Open Current You Tool</a>', 
+            unsafe_allow_html=True
+        )
 
 # Function to calculate age from birthday
 def calculate_age(birthday):
