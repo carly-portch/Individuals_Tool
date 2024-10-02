@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# Set page config for better layout
+st.set_page_config(layout="wide")
+
 # Custom CSS for cleaner aesthetics
 def set_custom_styles():
     st.markdown(
@@ -93,7 +96,7 @@ def create_bar_chart(data, title):
     
     for bar in bars:
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height + 0.01 * max(data.values()),
+        ax.text(bar.get_x() + bar.get_width()/2., height + 0.01*max(data.values()),
                 f'${height:.2f}', ha='center', va='bottom')
         
     plt.tight_layout()
@@ -121,8 +124,10 @@ def main():
 
     # Initialize session state variables
     if 'fixed_expenses' not in st.session_state:
+        # Initialize with default fixed expense categories
         st.session_state.fixed_expenses = {'Housing': 0.0, 'Utilities': 0.0, 'Insurance': 0.0, 'Transportation': 0.0, 'Debt Payments': 0.0, 'Groceries': 0.0}
     if 'variable_expenses' not in st.session_state:
+        # Initialize with default variable expense categories
         st.session_state.variable_expenses = {'Fun (trips, vacations etc.)': 0.0}
 
     st.markdown("<h4 class='section2-header'>Monthly Fixed Expenses</h4>", unsafe_allow_html=True)
@@ -186,33 +191,63 @@ def main():
         fixed_expenses_data = st.session_state.fixed_expenses
         variable_expenses_data = st.session_state.variable_expenses
 
-        total_fixed_expenses = sum(fixed_expenses_data.values())
-        total_variable_expenses = sum(variable_expenses_data.values())
-        total_expenses = total_fixed_expenses + total_variable_expenses
+        total_fixed = sum(fixed_expenses_data.values())
+        total_variable = sum(variable_expenses_data.values())
+        total_expenses = total_fixed + total_variable
 
-        # Calculate expense ratios
-        if total_expenses > 0:
-            expense_ratio = (total_expenses / post_tax_income) * 100
-            fixed_expense_ratio = (total_fixed_expenses / post_tax_income) * 100
+        st.markdown("<h2 class='section-header'>Results</h2>", unsafe_allow_html=True)
 
-            st.success(f"Total Expenses: ${total_expenses:.2f}")
-            st.success(f"Expense Ratio: {expense_ratio:.2f}% of income")
-            st.success(f"Fixed Expenses: ${total_fixed_expenses:.2f}")
-            st.success(f"Fixed Expense Ratio: {fixed_expense_ratio:.2f}% of income")
+        st.markdown("<h5 style='color: black;'>Total Monthly Expenses (Current You):<span style='color: #D22B2B;'><b> ${:.2f}</b></span></h5>".format(total_expenses), unsafe_allow_html=True)
+        st.markdown("<h5 style='color: black;'>Expense Limit (Future You):<span style='color: #D22B2B;'><b> ${:.2f}</b></span></h5>".format(future_you_limit), unsafe_allow_html=True)
 
-            # Pie chart for expenses
-            expense_data = {**fixed_expenses_data, **variable_expenses_data}
-            expense_colors = ['#ff9999','#66b3ff','#99ff99','#ffcc99','#c2c2f0','#ffb3e6']
-            pie_fig = create_pie_chart(expense_data, "Expense Distribution", colors=expense_colors)
-            st.pyplot(pie_fig)
+        # Calculate difference between Total Expenses and Expense Limit
+        difference = total_expenses - future_you_limit
 
-            # Bar chart for fixed and variable expenses
-            bar_data = {'Fixed Expenses': total_fixed_expenses, 'Variable Expenses': total_variable_expenses}
-            bar_fig = create_bar_chart(bar_data, "Fixed vs Variable Expenses")
-            st.pyplot(bar_fig)
+        if difference < 0:
+            st.markdown("<h4 class='section2-header'>Great news! Your expenses are ${:.2f} under your Future You limit. This means you are on track to achieving the future you want... with extra money to spare! <br><br> Consider adjusting your inputs in the Current You and Future You tools to see if you can get your Current You expenses to match your Future You expense limit. For example, you could allocate some of your extra money to having fun, leveling up your fixed expenses, or additional goals.</h4>".format(abs(difference)), unsafe_allow_html=True)
+        elif difference == 0:
+            st.markdown("<h4 class='section2-header'>Great news! Your expenses match your Future You limit, meaning you're perfectly on track to achieving your future goals as long as you maintain the spending limits you've input above!</h4>".format(difference), unsafe_allow_html=True)
         else:
-            st.warning("Total expenses must be greater than zero to calculate ratios.")
+            st.markdown("<h4 class='section2-header'>Uh oh! Your expenses are ${:.2f} over your Future You limit. This means that you are spending more than what is required to reach your Future You goals. <br><br> Consider playing around with your inputs in the Current You and Future You tools until you get your expenses to match your Future You expense limit.</h4>".format(difference), unsafe_allow_html=True)
 
-# Run the tool
+       # Calculate fixed expenses ratio
+            if total_expenses > 0:
+                fixed_ratio = total_fixed / total_expenses
+            else:
+                fixed_ratio = 0
+
+            if fixed_ratio > 0.65:
+                st.write("Insights: Hmm it looks like your fixed expenses are pretty high - these are the expenses that are not easily changeable month to month. This is worth really considering if your goals are possible right now, if you have any options to reduce your fixed expenses or if you have options for additional income.")
+            else:
+                st.write("Insights: You currently have a fixed to variable expense ratio of less than 65% - this means that the amount of money you have to spend every month is not the problem, instead it’s the amount you’re choosing to spend on fun and elective spending. This can be uncomfortable to adjust but it's your decision to make if you would rather change your goals or what you spend each month.")
+
+        # Pie chart with fixed expenses, variable expenses, and Remaining Income
+        if post_tax_income > 0:
+            remaining_income = post_tax_income - total_expenses
+            if remaining_income < 0:
+                remaining_income = 0
+            allocation_data = {
+                'Fixed Expenses': total_fixed,
+                'Variable Expenses': total_variable,
+                'Remaining Income (to put towards goals & savings)': remaining_income
+            }
+            fig = create_pie_chart(allocation_data, 'Income & Expenses Breakdown', colors=['#ff9999', '#66b3ff', '#99ff99'])
+            st.pyplot(fig)
+        else:
+            # Pie chart without income
+            allocation_data = {
+                'Fixed Expenses': total_fixed,
+                'Variable Expenses': total_variable
+            }
+            fig = create_pie_chart(allocation_data, 'Expenses Breakdown', colors=['#ff9999', '#66b3ff'])
+            st.pyplot(fig)
+
+        # Bar chart for expense breakdown
+        all_expenses_data = {**fixed_expenses_data, **variable_expenses_data}
+        fig2 = create_bar_chart(all_expenses_data, 'Expense Breakdown by Category')
+        st.pyplot(fig2)
+
 if __name__ == "__main__":
     main()
+
+
