@@ -159,7 +159,7 @@ def main():
             for index, row in accounts_df.iterrows():
                 st.write(f"**Account {index + 1}:**")
                 acc_name = st.text_input("Account Name", row['Account Name'], key=f"acc_name_{index}")
-                acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"], index=row['Type'], key=f"acc_type_{index}")
+                acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"], index=["HYSA", "Regular Savings", "Invested", "Registered"].index(row['Type']), key=f"acc_type_{index}")
                 interest_rate = st.number_input("Interest Rate (%)", min_value=0.0, value=row['Interest Rate (%)'], key=f"interest_rate_{index}")
                 balance = st.number_input("Current Balance ($)", min_value=0.0, value=row['Balance'], key=f"balance_{index}")
 
@@ -186,13 +186,12 @@ def main():
         goal_types = st.multiselect("What type of goals do you want to focus on today?", 
                                     ["This Year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
         
-        # Capture goals
         for goal in goal_types:
-            goal_detail = st.text_input(f"Describe your goal for: {goal}", key=goal)
+            goal_detail = st.text_input(f"Please specify your {goal} goal:")
             if goal_detail:
                 responses['goals'][goal] = goal_detail
 
-        # Input for future year before showing dashboard
+        # Year input for projections
         current_year = date.today().year
         responses['future_year'] = st.number_input("Enter a future year for projections:", min_value=current_year, step=1)
 
