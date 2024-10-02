@@ -150,18 +150,26 @@ def main():
     # Accounts input
     st.subheader("Tell us about your existing bank accounts:")
     responses['accounts'] = []
-    while True:
-        acc_name = st.text_input("Account Name (e.g., Chequing, HYSA, etc.)", key=f"account_name_{len(responses['accounts'])}")
-        acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"], key=f"account_type_{len(responses['accounts'])}")
-        interest_rate = st.number_input("Interest Rate (%)", min_value=0.0, key=f"interest_rate_{len(responses['accounts'])}")
-        balance = st.number_input("Current Balance ($)", min_value=0.0, key=f"balance_{len(responses['accounts'])}")
-        allocation = st.number_input("User Allocation ($)", min_value=0.0, key=f"allocation_{len(responses['accounts'])}")
-
-        if st.button("Add Account"):
-            responses['accounts'].append((acc_name, acc_type, interest_rate, balance, allocation))
+    
+    # Create a form to add accounts
+    with st.form("account_form"):
+        acc_name = st.text_input("Account Name (e.g., Chequing, HYSA, etc.)")
+        acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"])
+        interest_rate = st.number_input("Interest Rate (%)", min_value=0.0)
+        balance = st.number_input("Current Balance ($)", min_value=0.0)
+        allocation = st.number_input("User Allocation ($)", min_value=0.0)
         
-        if st.button("Finish Adding Accounts"):
-            break
+        # Submit button to add account
+        if st.form_submit_button("Add Account"):
+            responses['accounts'].append((acc_name, acc_type, interest_rate, balance, allocation))
+            st.success(f"Added {acc_name} successfully!")
+
+    # Finish adding accounts button
+    if st.button("Finish Adding Accounts"):
+        if not responses['accounts']:
+            st.warning("Please add at least one account before finishing.")
+        else:
+            st.success("Finished adding accounts!")
 
     # Capture goal details
     goal_types = st.multiselect("What type of goals do you want to focus on today?", 
