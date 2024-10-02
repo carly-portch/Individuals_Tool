@@ -2,10 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# This must be the very first Streamlit command
-st.set_page_config(page_title="Current You Tool", layout="wide")
 
-# Your other Streamlit code follows...
 def run_current_you_tool():
     st.title("Current You Tool")
     # Rest of the script...
