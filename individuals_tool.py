@@ -44,7 +44,7 @@ def visualize_buckets(responses):
         
     for account, data in contributions.items():
         st.subheader(account)
-        st.write(f"**Account Type:** {data['Interest Rate']}%")
+        st.write(f"**Account Type:** {account_type}")
         st.write(f"**Current Amount:** ${data['Principal']:.2f}")
         st.write(f"**Monthly Contribution:** ${data['Monthly Contribution']:.2f}")
         st.write(f"**Estimated Amount in 2055:** ${data['Future Value (2055)']:.2f}")
@@ -54,12 +54,16 @@ def visualize_buckets(responses):
 def main():
     st.title("Financial Planning App")
     
+    # Initialize session state for accounts
+    if 'accounts' not in st.session_state:
+        st.session_state.accounts = []
+    
     # Collect user responses
     responses = {
         'birthday': st.date_input("When is your birthday?"),
         'occupation_status': st.selectbox("Current occupation status:", 
                                            ["Unemployed", "Student", "Employed", "Maternity/Paternity Leave"]),
-        'accounts': []
+        'accounts': st.session_state.accounts
     }
     
     # Calculate age
@@ -70,26 +74,24 @@ def main():
     # Add accounts
     st.header("Add Your Bank Accounts")
     
-    if 'account_index' not in st.session_state:
-        st.session_state.account_index = 0
-    
     while True:
-        account_name = st.text_input("Account Name (e.g., Chequing, HYSA, etc.)", key=f"account_name_{st.session_state.account_index}")
+        account_name = st.text_input("Account Name (e.g., Chequing, HYSA, etc.)")
         account_type = st.selectbox("Account Type (e.g., HYSA, Regular Savings, etc.)", 
-                                     ["HYSA", "Regular Savings", "Invested", "Registered"], 
-                                     key=f"account_type_{st.session_state.account_index}")
-        interest_rate = st.number_input("Interest Rate (%)", key=f"interest_rate_{st.session_state.account_index}")
-        principal = st.number_input("Current Amount in Account ($)", key=f"principal_{st.session_state.account_index}")
-        contribution = st.number_input("Monthly Contribution Amount ($)", key=f"contribution_{st.session_state.account_index}")
+                                     ["HYSA", "Regular Savings", "Invested", "Registered"])
+        interest_rate = st.number_input("Interest Rate (%)")
+        principal = st.number_input("Current Amount in Account ($)")
+        contribution = st.number_input("Monthly Contribution Amount ($)")
 
         if st.button("Add Account"):
             st.session_state.accounts.append((account_name, account_type, interest_rate, principal, contribution))
-            st.session_state.account_index += 1
             st.experimental_rerun()
         
         if st.session_state.accounts:
             responses['accounts'] = st.session_state.accounts
-            st.button("Show Dashboard", on_click=show_dashboard, args=(responses,))
+
+    # Show dashboard after accounts are added
+    if st.button("Show Dashboard"):
+        show_dashboard(responses)
 
 # Show the dashboard
 def show_dashboard(responses):
