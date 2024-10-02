@@ -2,11 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
-def run_current_you_tool():
-    st.title("Current You Tool")
-    # Rest of the script...
-
 # Custom CSS for cleaner aesthetics
 def set_custom_styles():
     st.markdown(
