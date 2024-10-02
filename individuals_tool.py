@@ -152,27 +152,8 @@ def main():
         # Show all added accounts
         st.write("### Current Accounts:")
         if responses['accounts']:
-            # Create a DataFrame for editing
             accounts_df = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance'])
-            edited_accounts = []
-
-            for index, row in accounts_df.iterrows():
-                st.write(f"**Account {index + 1}:**")
-                acc_name = st.text_input("Account Name", row['Account Name'], key=f"acc_name_{index}")
-                acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"], index=["HYSA", "Regular Savings", "Invested", "Registered"].index(row['Type']), key=f"acc_type_{index}")
-                interest_rate = st.number_input("Interest Rate (%)", min_value=0.0, value=row['Interest Rate (%)'], key=f"interest_rate_{index}")
-                balance = st.number_input("Current Balance ($)", min_value=0.0, value=row['Balance'], key=f"balance_{index}")
-
-                edited_accounts.append((acc_name, acc_type, interest_rate, balance))
-
-                # Button to remove account
-                if st.button(f"Remove Account {index + 1}", key=f"remove_{index}"):
-                    responses['accounts'].pop(index)
-                    st.success(f"Removed {row['Account Name']} successfully!")
-                    break  # Break out of the loop to refresh the display
-
-            # Update the accounts in responses only after editing/removing
-            responses['accounts'] = edited_accounts
+            st.write(accounts_df)
 
         # Capture allocations after adding accounts
         if responses['accounts']:
@@ -186,21 +167,23 @@ def main():
         goal_types = st.multiselect("What type of goals do you want to focus on today?", 
                                     ["This Year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
         
+        # Capture goals
         for goal in goal_types:
-            goal_detail = st.text_input(f"Please specify your {goal} goal:")
+            goal_detail = st.text_input(f"Describe your goal for: {goal}", key=goal)
             if goal_detail:
                 responses['goals'][goal] = goal_detail
 
-        # Year input for projections
-        current_year = date.today().year
+        # Input for future year before showing dashboard
+        current_year = date.today().year  # Ensure current_year is defined here
         responses['future_year'] = st.number_input("Enter a future year for projections:", min_value=current_year, step=1)
 
-        # Button to show dashboard
+        # Show dashboard
         if st.button("Show Dashboard"):
             show_dashboard(responses)
 
     except Exception as e:
-        st.error(f"This app has encountered an error: {e}")
+        st.error(f"An error occurred: {str(e)}")
 
+# Run the app
 if __name__ == "__main__":
     main()
