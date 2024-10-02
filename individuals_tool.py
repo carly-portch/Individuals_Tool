@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import current_you
 from datetime import date
+import current_you  # Import the Current You tool script
 
 # Function to calculate age from birthday
 def calculate_age(birthday):
@@ -27,6 +27,7 @@ def visualize_buckets(responses):
 
     num_accounts = len(responses['accounts'])
     paycheck = responses['paycheck']
+
     fig, ax = plt.subplots(figsize=(10, 5))
 
     ax.arrow(-1.5, 0.5, 1.5, 0, head_width=0.05, head_length=0.1, fc='green', ec='green')
@@ -38,7 +39,6 @@ def visualize_buckets(responses):
     for i, account in enumerate(bucket_names):
         bucket_height = allocations[i] / paycheck if paycheck > 0 else 0
         bucket_color = 'lightblue' if bucket_height > 0 else 'lightgray'
-
         ax.add_patch(plt.Rectangle((i, 0.3), 0.5, bucket_height, fill=True, color=bucket_color, edgecolor='black'))
         ax.text(i + 0.25, 0.3 + bucket_height + 0.02, account, fontsize=10, ha='center')
 
@@ -57,10 +57,10 @@ def show_dashboard(responses):
     st.subheader("Your Financial Overview:")
     st.write(f"**Age**: {responses['age']}")
     st.write(f"**Occupation Status**: {responses['occupation_status']}")
-
+    
     if responses['occupation_status'] == 'Employed':
         st.write(f"**Monthly Take-Home Pay**: ${responses['paycheck']}")
-
+    
     st.subheader("Your Accounts:")
     accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance'])
     st.write(accounts)
@@ -92,10 +92,6 @@ def show_dashboard(responses):
     plt.xticks(rotation=45)
     st.pyplot(fig)
 
-    # Button to go to Current You tool
-    if st.button("Go to Current You Tool"):
-        st.session_state.navigate_to_current_you = True
-
 # Main function to run the app
 def main():
     try:
@@ -110,15 +106,6 @@ def main():
 
         responses = st.session_state.responses
 
-        if 'navigate_to_current_you' in st.session_state and st.session_state.navigate_to_current_you:
-            # Import and run your Current You tool here
-            # e.g., run_current_you_tool()  # This should be your function to execute the Current You script
-            st.subheader("Current You Tool Results")
-            # Display results from Current You tool
-            # e.g., st.write(st.session_state.current_you_results)
-            st.session_state.navigate_to_current_you = False
-            return
-
         # Input for birthday
         birthday = st.date_input("When is your birthday?")
         if birthday:
@@ -128,34 +115,37 @@ def main():
         responses['occupation_status'] = st.selectbox("Current occupation status:", 
                                                         ["Unemployed", "Student", "Employed", "Maternity/Paternity Leave"])
 
+        # Input for monthly take-home pay
         if responses['occupation_status'] == "Employed":
             responses['paycheck'] = st.number_input("What is your monthly take-home pay after tax?", min_value=0.0)
 
+        # Accounts input
         st.subheader("Tell us about your existing bank accounts:")
         
+        # Create a form to add accounts
         with st.form("account_form"):
             acc_name = st.text_input("Account Name (e.g., Chequing, HYSA, etc.)")
             acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"])
             interest_rate = st.number_input("Interest Rate (%)", min_value=0.0)
             balance = st.number_input("Current Balance ($)", min_value=0.0)
             
+            # Submit button to add account
             if st.form_submit_button("Add Account"):
                 responses['accounts'].append((acc_name, acc_type, interest_rate, balance))
                 st.success(f"Added {acc_name} successfully!")
 
+        # Show all added accounts
         st.write("### Current Accounts:")
         if responses['accounts']:
             accounts_df = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance'])
-            for i, row in accounts_df.iterrows():
-                cols = st.columns([3, 1, 1, 1])
-                cols[0].write(row['Account Name'])
-                cols[1].write(row['Type'])
-                cols[2].write(row['Interest Rate (%)'])
-                cols[3].write(row['Balance'])
-                if cols[4].button("Delete", key=f"delete_{i}"):
-                    del responses['accounts'][i]
-                    st.experimental_rerun()
+            for i, account in enumerate(responses['accounts']):
+                cols = st.columns([3, 1])  # Create two columns
+                cols[0].write(account)  # Show account details
+                if cols[1].button("Delete", key=f"delete_{i}"):  # Delete button
+                    responses['accounts'].pop(i)
+                    st.experimental_rerun()  # Refresh the app after deletion
 
+        # Capture allocations after adding accounts
         if responses['accounts']:
             st.subheader("How much would you like to allocate from your monthly take-home pay into each account?")
             for account in responses['accounts']:
@@ -163,6 +153,7 @@ def main():
                 allocation = st.number_input(f"Allocation for {account_name}:", min_value=0.0, key=account_name)
                 responses['allocations'][account_name] = allocation
 
+        # Capture goal details
         goal_types = st.multiselect("What type of goals do you want to focus on today?", 
                                     ["This Year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
         
@@ -171,11 +162,18 @@ def main():
             if goal_detail:
                 responses['goals'][goal] = goal_detail
 
+        # Input for future year before showing dashboard
         current_year = date.today().year
         responses['future_year'] = st.number_input("Enter a future year for projections:", min_value=current_year, step=1)
 
+        # Show dashboard
         if st.button("Show Dashboard"):
             show_dashboard(responses)
+
+        # Button to navigate to Current You tool
+        if st.button("Go to Current You Tool"):
+            st.session_state.navigate_to_current_you = True
+            current_you.run_current_you_tool()  # Call the Current You tool function
 
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
