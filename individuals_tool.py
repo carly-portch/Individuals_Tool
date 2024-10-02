@@ -6,7 +6,7 @@ import pandas as pd
 # Function to calculate user's age
 def calculate_age(birthdate):
     today = date.today()
-    age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+    age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthday.day))
     return age
 
 # Function to visualize income distribution into buckets
@@ -18,29 +18,38 @@ def visualize_buckets(responses):
         st.write("This visualization is only available for employed users.")
         return
 
-    # Get the number of accounts and calculate equal distribution
+    # Get the number of accounts and total paycheck
     num_accounts = len(responses['accounts'])
     paycheck = responses['paycheck']
-    income_per_bucket = paycheck / num_accounts
+    if num_accounts == 0:
+        st.write("No accounts available to distribute income.")
+        return
 
     # Set up figure
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     # Draw an arrow representing income
-    ax.arrow(-1, 0.5, 1.5, 0, head_width=0.1, head_length=0.2, fc='green', ec='green')
-    ax.text(-1.5, 0.45, 'Income', fontsize=12, color='green')
+    ax.arrow(-1.5, 0.5, 1.5, 0, head_width=0.05, head_length=0.1, fc='green', ec='green')
+    ax.text(-1.8, 0.5, 'Income', fontsize=12, color='green', ha='center', va='center')
 
-    # Draw buckets (as rectangles) and label them
+    # Buckets (as rectangles) with user-defined allocations
     bucket_names = [acc[0] for acc in responses['accounts']]
-    for i, account in enumerate(bucket_names):
-        ax.add_patch(plt.Rectangle((i, 0.3), 0.5, 0.5, fill=True, color='lightblue', edgecolor='black'))
-        ax.text(i + 0.05, 0.6, account, fontsize=10, ha='center')
+    allocations = [acc[5] for acc in responses['accounts']]  # User-defined allocations
 
+    for i, account in enumerate(bucket_names):
+        bucket_height = allocations[i] / paycheck if paycheck > 0 else 0
+        bucket_color = 'lightblue' if bucket_height > 0 else 'lightgray'  # Color for allocated vs unallocated
+
+        # Draw the bucket
+        ax.add_patch(plt.Rectangle((i, 0.3), 0.5, bucket_height, fill=True, color=bucket_color, edgecolor='black'))
+        ax.text(i + 0.25, 0.3 + bucket_height + 0.02, account, fontsize=10, ha='center')
+        
         # Label the amount that goes into each bucket
-        ax.text(i + 0.25, 0.2, f"${income_per_bucket:.2f}", fontsize=10, color='blue', ha='center')
+        if allocations[i] > 0:
+            ax.text(i + 0.25, 0.3 + bucket_height / 2, f"${allocations[i]:.2f}", fontsize=10, color='blue', ha='center')
 
     # Hide axis
-    ax.set_xlim([-2, num_accounts])
+    ax.set_xlim([-2, num_accounts + 1])
     ax.set_ylim([0, 1])
     ax.axis('off')
 
@@ -62,7 +71,7 @@ def show_dashboard(responses):
         st.write(f"**Part-time income during school**: ${responses['student_income']}")
 
     st.subheader("Your Accounts:")
-    accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate', 'Balance', 'Automated Deposit'])
+    accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate', 'Balance', 'Automated Deposit', 'User Allocation'])
     st.write(accounts)
 
     # Visualize the income being distributed into accounts
@@ -114,6 +123,7 @@ def main():
     interest_rates = []
     balances = []
     automated_deposits = []
+    allocations = []
     
     add_account = True
     while add_account:
@@ -123,16 +133,27 @@ def main():
         interest_rate = st.number_input("Interest Rate (optional)", value=0.0, step=0.1, key=f"int_rate_{len(account_names)}")
         balance = st.number_input(f"How much is currently in your {account_name} account?", min_value=0, step=100, key=f"balance_{len(account_names)}")
         auto_deposit = st.number_input(f"How much do you currently auto-deposit into your {account_name} account?", min_value=0, step=50, key=f"auto_deposit_{len(account_names)}")
+        
+        # User-defined allocation input using sliders
+        max_allocation = responses['paycheck'] if 'paycheck' in responses else 0
+        allocation = st.slider(f"How much of your paycheck do you want to allocate to {account_name}?", min_value=0, max_value=max_allocation, step=10, key=f"allocation_{len(account_names)}")
 
         account_names.append(account_name)
         account_types.append(account_type)
         interest_rates.append(interest_rate)
         balances.append(balance)
         automated_deposits.append(auto_deposit)
+        allocations.append(allocation)
 
         add_account = st.checkbox("Add another account?", key=f"add_account_{len(account_names)}")
 
-    responses['accounts'] = list(zip(account_names, account_types, interest_rates, balances, automated_deposits))
+    responses['accounts'] = list(zip(account_names, account_types, interest_rates, balances, automated_deposits, allocations))
+
+    # Validate total allocations do not exceed paycheck
+    total_allocated = sum(allocations)
+    if total_allocated > responses.get('paycheck', 0):
+        st.error(f"Total allocations (${total_allocated:.2f}) exceed your paycheck (${responses.get('paycheck', 0):.2f}). Please adjust your allocations.")
+        return
 
     # Ask for goals
     st.subheader("What type of goals do you want to focus on today?")
