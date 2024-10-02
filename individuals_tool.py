@@ -124,8 +124,8 @@ def main():
 
         responses = st.session_state.responses
 
-        # Create two columns
-        col1, col2 = st.columns(2)
+        # Create two columns with specified widths
+        col1, col2 = st.columns([1, 4])  # 1 part for the left column (20%), 4 parts for the right column (80%)
 
         with col1:
             # Input for birthday
