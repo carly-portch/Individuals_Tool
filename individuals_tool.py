@@ -57,9 +57,26 @@ def visualize_buckets(responses):
     st.pyplot(fig)
 
 # Function to calculate future account values with compound interest
-def calculate_future_value(principal, rate, years, compounding_per_year=12):
+def calculate_future_value(principal, rate, years, contribution, frequency, compounding_per_year=12):
     """Calculate the future value of an investment."""
-    return principal * (1 + rate / (100 * compounding_per_year)) ** (compounding_per_year * years)
+    # Determine the number of contributions based on frequency
+    if frequency == 'Monthly':
+        n = compounding_per_year
+    elif frequency == 'Bi-weekly':
+        n = compounding_per_year / 2
+    elif frequency == 'Weekly':
+        n = compounding_per_year / 4
+    else:
+        n = compounding_per_year  # Default to monthly if "Other"
+
+    # Compound interest formula
+    future_value = principal * (1 + rate / (100 * compounding_per_year)) ** (compounding_per_year * years)
+    
+    # Calculate future value of contributions
+    if contribution > 0:
+        future_value += contribution * (((1 + rate / (100 * compounding_per_year)) ** (n * years) - 1) / (rate / (100 * compounding_per_year)))
+    
+    return future_value
 
 # Function to display the dashboard based on user responses
 def show_dashboard(responses):
@@ -76,7 +93,7 @@ def show_dashboard(responses):
         st.write(f"**Part-time income during school**: ${responses['student_income']}")
 
     st.subheader("Your Accounts:")
-    accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance', 'Automated Deposit', 'User Allocation'])
+    accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance', 'User Allocation'])
     st.write(accounts)
 
     # Visualize the income being distributed into accounts
@@ -99,8 +116,8 @@ def show_dashboard(responses):
         st.write("Projected Account Values:")
         future_values = {}
         for account in responses['accounts']:
-            account_name, _, interest_rate, balance, _, _ = account
-            future_value = calculate_future_value(balance, interest_rate, years_to_calculate)
+            account_name, _, interest_rate, balance, allocation = account
+            future_value = calculate_future_value(balance, interest_rate, years_to_calculate, allocation, responses['paycheck_frequency'])
             future_values[account_name] = future_value
             st.write(f"**{account_name}**: ${future_value:.2f}")
 
@@ -146,7 +163,6 @@ def main():
     account_types = []
     interest_rates = []
     balances = []
-    automated_deposits = []
     allocations = []
     
     add_account = True
@@ -156,7 +172,6 @@ def main():
         account_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"], key=f"acc_type_{len(account_names)}")
         interest_rate = st.number_input("Interest Rate (%) (optional)", value=0.0, step=0.1, key=f"int_rate_{len(account_names)}")
         balance = st.number_input(f"How much is currently in your {account_name} account?", min_value=0, step=100, key=f"balance_{len(account_names)}")
-        auto_deposit = st.number_input(f"How much do you currently auto-deposit into your {account_name} account?", min_value=0, step=50, key=f"auto_deposit_{len(account_names)}")
         
         # User-defined allocation input using sliders
         max_allocation = responses['paycheck'] if 'paycheck' in responses else 0
@@ -166,25 +181,22 @@ def main():
         account_types.append(account_type)
         interest_rates.append(interest_rate)
         balances.append(balance)
-        automated_deposits.append(auto_deposit)
         allocations.append(allocation)
 
         add_account = st.checkbox("Add another account?", key=f"add_account_{len(account_names)}")
 
-    responses['accounts'] = list(zip(account_names, account_types, interest_rates, balances, automated_deposits, allocations))
+    responses['accounts'] = list(zip(account_names, account_types, interest_rates, balances, allocations))
 
     # Validate total allocations do not exceed paycheck
     total_allocated = sum(allocations)
-    if total_allocated > responses.get('paycheck', 0):
-        st.error(f"Total allocations (${total_allocated:.2f}) exceed your paycheck (${responses.get('paycheck', 0):.2f}). Please adjust your allocations.")
-        return
+    if total_allocated > responses['paycheck']:
+        st.warning("Total allocations exceed your paycheck. Please adjust your allocations.")
 
-    # Ask for goals
-    st.subheader("What type of goals do you want to focus on today?")
-    goal_types = st.multiselect("Choose your financial goals", 
-                                ["This year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
-    
     # Capture goal details
+    goal_types = st.multiselect("What type of goals do you want to focus on today?", 
+                                ["This Year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
+    
+    # Capture goals
     responses['goals'] = {}
     for goal in goal_types:
         goal_detail = st.text_input(f"Please specify details for your goal: {goal}")
