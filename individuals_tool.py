@@ -152,8 +152,27 @@ def main():
         # Show all added accounts
         st.write("### Current Accounts:")
         if responses['accounts']:
+            # Create a DataFrame for editing
             accounts_df = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance'])
-            st.write(accounts_df)
+            edited_accounts = []
+
+            for index, row in accounts_df.iterrows():
+                st.write(f"**Account {index + 1}:**")
+                acc_name = st.text_input("Account Name", row['Account Name'], key=f"acc_name_{index}")
+                acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"], index=row['Type'], key=f"acc_type_{index}")
+                interest_rate = st.number_input("Interest Rate (%)", min_value=0.0, value=row['Interest Rate (%)'], key=f"interest_rate_{index}")
+                balance = st.number_input("Current Balance ($)", min_value=0.0, value=row['Balance'], key=f"balance_{index}")
+
+                edited_accounts.append((acc_name, acc_type, interest_rate, balance))
+
+                # Button to remove account
+                if st.button(f"Remove Account {index + 1}", key=f"remove_{index}"):
+                    responses['accounts'].pop(index)
+                    st.success(f"Removed {row['Account Name']} successfully!")
+                    break  # Break out of the loop to refresh the display
+
+            # Update the accounts in responses only after editing/removing
+            responses['accounts'] = edited_accounts
 
         # Capture allocations after adding accounts
         if responses['accounts']:
@@ -174,16 +193,15 @@ def main():
                 responses['goals'][goal] = goal_detail
 
         # Input for future year before showing dashboard
-        current_year = date.today().year  # Ensure current_year is defined here
+        current_year = date.today().year
         responses['future_year'] = st.number_input("Enter a future year for projections:", min_value=current_year, step=1)
 
-        # Show dashboard
+        # Button to show dashboard
         if st.button("Show Dashboard"):
             show_dashboard(responses)
 
     except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+        st.error(f"This app has encountered an error: {e}")
 
-# Run the app
 if __name__ == "__main__":
     main()
