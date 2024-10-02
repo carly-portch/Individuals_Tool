@@ -3,14 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import date
 
-# Function to dynamically load and execute the Current You tool script
- # Button to open Current You Tool
-    if st.button("Open Current You Tool"):
-        # Use the 'st.markdown' to create a link that opens in a new window
-        st.markdown(
-            '<a href="https://current-you.streamlit.app/" target="_blank" rel="noopener noreferrer">Open Current You Tool</a>', 
-            unsafe_allow_html=True
-        )
+
 
 # Function to calculate age from birthday
 def calculate_age(birthday):
@@ -185,6 +178,14 @@ def main():
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
+ # Button to open Current You Tool
+    if st.button("Open Current You Tool"):
+        # Use the 'st.markdown' to create a link that opens in a new window
+        st.markdown(
+            '<a href="https://current-you.streamlit.app/" target="_blank" rel="noopener noreferrer">Open Current You Tool</a>', 
+            unsafe_allow_html=True
+        )
+     
 # Run the app
 if __name__ == "__main__":
     main()
