@@ -51,7 +51,7 @@ def visualize_buckets(responses):
 
     # Buckets (as rectangles)
     bucket_names = [acc[0] for acc in responses['accounts']]
-    allocations = [acc[4] for acc in responses['accounts']]  # User-defined allocations
+    allocations = [responses['allocations'].get(acc[0], 0) for acc in responses['accounts']]  # User-defined allocations
 
     for i, account in enumerate(bucket_names):
         bucket_height = allocations[i] / paycheck if paycheck > 0 else 0
@@ -190,11 +190,14 @@ def main():
     
     # Capture goals
     for goal in goal_types:
-        goal_detail = st.text_input(f"Please specify details for your goal: {goal}", key=f"goal_{goal}")
-        responses['goals'][goal] = goal_detail
+        goal_detail = st.text_input(f"Describe your goal for: {goal}", key=goal)
+        if goal_detail:
+            responses['goals'][goal] = goal_detail
 
-    # Show the dashboard based on the responses collected
-    show_dashboard(responses)
+    # Show dashboard
+    if st.button("Show Dashboard"):
+        show_dashboard(responses)
 
+# Run the app
 if __name__ == "__main__":
     main()
