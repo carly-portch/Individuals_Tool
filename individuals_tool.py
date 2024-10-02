@@ -89,12 +89,14 @@ def show_dashboard(responses):
     for goal, goal_detail in responses['goals'].items():
         st.write(f"**{goal}**: {goal_detail}")
 
-    # Automatically show projected account values for 2065
-    target_year = 2065
+    # User input for future year
+    year_input = st.number_input("Enter a future year:", min_value=date.today().year, step=1)
+    
+    # Calculate and show projected account values for the input year
     current_year = date.today().year
-    years_to_calculate = target_year - current_year
+    years_to_calculate = year_input - current_year
 
-    st.write("Projected Account Values for 2065:")
+    st.write(f"Projected Account Values for {year_input}:")
     future_values = {}
     for account in responses['accounts']:
         account_name, _, interest_rate, balance = account
@@ -107,7 +109,7 @@ def show_dashboard(responses):
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.bar(future_values.keys(), future_values.values(), color='skyblue')
     ax.set_ylabel('Projected Value ($)')
-    ax.set_title(f'Projected Account Values in {target_year}')
+    ax.set_title(f'Projected Account Values in {year_input}')
     plt.xticks(rotation=45)
     st.pyplot(fig)
 
