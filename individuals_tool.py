@@ -174,10 +174,13 @@ def main():
         if st.button("Show Dashboard"):
             show_dashboard(responses)
 
-        # Button to directly open Current You Tool
-        if st.button("Open Current You Tool"):
-            # Redirect to the Current You Tool
-            st.markdown('<meta http-equiv="refresh" content="0; url=https://current-you.streamlit.app/">', unsafe_allow_html=True)
+            # Button to open Current You Tool
+    if st.button("Open Current You Tool"):
+        # Use the 'st.markdown' to create a link that opens in a new window
+        st.markdown(
+            '<a href="https://current-you.streamlit.app/" target="_blank" rel="noopener noreferrer">Open Current You Tool</a>', 
+            unsafe_allow_html=True
+        )
 
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
