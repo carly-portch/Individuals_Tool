@@ -49,7 +49,7 @@ def visualize_buckets(responses):
     ax.arrow(-1.5, 0.5, 1.5, 0, head_width=0.05, head_length=0.1, fc='green', ec='green')
     ax.text(-1.8, 0.5, 'Income', fontsize=12, color='green', ha='center', va='center')
 
-    # Buckets (as rectangles) with user-defined allocations
+    # Buckets (as rectangles)
     bucket_names = [acc[0] for acc in responses['accounts']]
     allocations = [acc[4] for acc in responses['accounts']]  # User-defined allocations
 
@@ -83,12 +83,12 @@ def show_dashboard(responses):
     st.write(f"**Occupation Status**: {responses['occupation_status']}")
     
     if responses['occupation_status'] == 'Employed':
-        st.write(f"**Paycheck**: ${responses['paycheck']} at {responses['paycheck_frequency']} frequency")
+        st.write(f"**Paycheck**: ${responses['paycheck']} at {responses['paycheck_frequency']}")
     elif responses['occupation_status'] == 'Student' and responses.get('student_income'):
         st.write(f"**Part-time income during school**: ${responses['student_income']}")
 
     st.subheader("Your Accounts:")
-    accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance', 'User Allocation'])
+    accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance'])
     st.write(accounts)
 
     # Visualize the income being distributed into accounts
@@ -111,7 +111,8 @@ def show_dashboard(responses):
         st.write("Projected Account Values:")
         future_values = {}
         for account in responses['accounts']:
-            account_name, _, interest_rate, balance, allocation = account
+            account_name, _, interest_rate, balance = account
+            allocation = responses['allocations'].get(account_name, 0)  # Get allocation for this account
             future_value = calculate_future_value(balance, interest_rate, years_to_calculate, allocation, responses['paycheck_frequency'])
             future_values[account_name] = future_value
             st.write(f"**{account_name}**: ${future_value:.2f}")
@@ -130,8 +131,15 @@ def show_dashboard(responses):
 def main():
     st.header("Welcome to the Financial Planning App")
 
-    # Store user responses
-    responses = {}
+    # Store user responses in session state
+    if 'responses' not in st.session_state:
+        st.session_state.responses = {
+            'accounts': [],
+            'allocations': {},
+            'goals': {}
+        }
+
+    responses = st.session_state.responses
 
     # Input for birthday
     birthday = st.date_input("When is your birthday?")
@@ -149,7 +157,6 @@ def main():
 
     # Accounts input
     st.subheader("Tell us about your existing bank accounts:")
-    responses['accounts'] = []
     
     # Create a form to add accounts
     with st.form("account_form"):
@@ -157,26 +164,31 @@ def main():
         acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"])
         interest_rate = st.number_input("Interest Rate (%)", min_value=0.0)
         balance = st.number_input("Current Balance ($)", min_value=0.0)
-        allocation = st.number_input("User Allocation ($)", min_value=0.0)
         
         # Submit button to add account
         if st.form_submit_button("Add Account"):
-            responses['accounts'].append((acc_name, acc_type, interest_rate, balance, allocation))
+            responses['accounts'].append((acc_name, acc_type, interest_rate, balance))
             st.success(f"Added {acc_name} successfully!")
 
-    # Finish adding accounts button
-    if st.button("Finish Adding Accounts"):
-        if not responses['accounts']:
-            st.warning("Please add at least one account before finishing.")
-        else:
-            st.success("Finished adding accounts!")
+    # Show all added accounts
+    st.write("### Current Accounts:")
+    if responses['accounts']:
+        accounts_df = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance'])
+        st.write(accounts_df)
+
+    # Capture allocations after adding accounts
+    if responses['accounts']:
+        st.subheader("How much would you like to allocate from your paycheck into each account?")
+        for account in responses['accounts']:
+            account_name = account[0]
+            allocation = st.number_input(f"Allocation for {account_name}:", min_value=0.0, key=account_name)
+            responses['allocations'][account_name] = allocation
 
     # Capture goal details
     goal_types = st.multiselect("What type of goals do you want to focus on today?", 
                                 ["This Year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
     
     # Capture goals
-    responses['goals'] = {}
     for goal in goal_types:
         goal_detail = st.text_input(f"Please specify details for your goal: {goal}", key=f"goal_{goal}")
         responses['goals'][goal] = goal_detail
