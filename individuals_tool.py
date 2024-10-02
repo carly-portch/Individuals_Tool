@@ -99,31 +99,27 @@ def show_dashboard(responses):
     for goal, goal_detail in responses['goals'].items():
         st.write(f"**{goal}**: {goal_detail}")
 
-    # Snapshot feature for future account values
-    st.subheader("Account Snapshot for a Future Year")
-    year_input = st.number_input("Enter a future year:", min_value=date.today().year, step=1)
-    
-    if st.button("Calculate Snapshot"):
-        snapshot_year = year_input
-        current_year = date.today().year
-        years_to_calculate = snapshot_year - current_year
-        
-        st.write("Projected Account Values:")
-        future_values = {}
-        for account in responses['accounts']:
-            account_name, _, interest_rate, balance = account
-            allocation = responses['allocations'].get(account_name, 0)  # Get allocation for this account
-            future_value = calculate_future_value(balance, interest_rate, years_to_calculate, allocation, responses['paycheck_frequency'])
-            future_values[account_name] = future_value
-            st.write(f"**{account_name}**: ${future_value:.2f}")
+    # Automatically show projected account values for 2065
+    target_year = 2065
+    current_year = date.today().year
+    years_to_calculate = target_year - current_year
 
-        # Visualization for future values
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.bar(future_values.keys(), future_values.values(), color='skyblue')
-        ax.set_ylabel('Projected Value ($)')
-        ax.set_title(f'Projected Account Values in {snapshot_year}')
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
+    st.write("Projected Account Values for 2065:")
+    future_values = {}
+    for account in responses['accounts']:
+        account_name, _, interest_rate, balance = account
+        allocation = responses['allocations'].get(account_name, 0)  # Get allocation for this account
+        future_value = calculate_future_value(balance, interest_rate, years_to_calculate, allocation, responses['paycheck_frequency'])
+        future_values[account_name] = future_value
+        st.write(f"**{account_name}**: ${future_value:.2f}")
+
+    # Visualization for future values
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar(future_values.keys(), future_values.values(), color='skyblue')
+    ax.set_ylabel('Projected Value ($)')
+    ax.set_title(f'Projected Account Values in {target_year}')
+    plt.xticks(rotation=45)
+    st.pyplot(fig)
 
     st.write("You can further personalize your dashboard or add more goals from the side panel.")
 
