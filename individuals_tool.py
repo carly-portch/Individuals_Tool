@@ -101,8 +101,15 @@ def show_dashboard(responses):
 
     # Snapshot feature for future account values
     st.subheader("Account Snapshot for a Future Year")
-    year_input = st.number_input("Enter a future year:", min_value=date.today().year, step=1)
+    year_input = st.number_input("Enter a future year:", min_value=date.today().year, step=1, key='snapshot_year')
     
+    # Show previously calculated snapshots if available
+    if 'snapshot_data' in st.session_state:
+        st.write("Previously calculated snapshot values:")
+        for account, value in st.session_state.snapshot_data.items():
+            st.write(f"**{account}**: ${value:.2f}")
+
+    # Create a button to calculate snapshot
     if st.button("Calculate Snapshot"):
         snapshot_year = year_input
         current_year = date.today().year
@@ -117,6 +124,9 @@ def show_dashboard(responses):
             future_values[account_name] = future_value
             st.write(f"**{account_name}**: ${future_value:.2f}")
 
+        # Save snapshot data in session state
+        st.session_state.snapshot_data = future_values
+
         # Visualization for future values
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(future_values.keys(), future_values.values(), color='skyblue')
@@ -124,12 +134,6 @@ def show_dashboard(responses):
         ax.set_title(f'Projected Account Values in {snapshot_year}')
         plt.xticks(rotation=45)
         st.pyplot(fig)
-
-    # Show any previously calculated snapshots if available
-    if 'snapshot_data' in st.session_state:
-        st.write("Previously calculated snapshot values:")
-        for account, value in st.session_state.snapshot_data.items():
-            st.write(f"**{account}**: ${value:.2f}")
 
     st.write("You can further personalize your dashboard or add more goals from the side panel.")
 
@@ -196,7 +200,7 @@ def main():
     
     # Capture goals
     for goal in goal_types:
-        goal_detail = st.text_input(f"Describe your goal for: {goal}", key=goal)
+        goal_detail = st.text_input(f"Goal details for: {goal}", key=goal)
         if goal_detail:
             responses['goals'][goal] = goal_detail
 
