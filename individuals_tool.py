@@ -3,6 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import date
 
+# Set the page config to wide mode
+st.set_page_config(page_title="Financial Planning App", layout="wide")
+
 # Function to calculate age from birthday
 def calculate_age(birthday):
     today = date.today()
