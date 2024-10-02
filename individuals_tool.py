@@ -4,6 +4,26 @@ import matplotlib.pyplot as plt
 from datetime import date
 import current_you  # Import the Current You tool script
 
+import streamlit as st
+
+# Other parts of your script...
+
+def run_current_you_tool():
+    # When button is pressed, load the Current You tool dynamically
+    with open("current_you.py") as file:
+        exec(file.read())
+
+def main():
+    st.title("Financial Planning App")
+    
+    # Your existing app code...
+    
+    if st.button("Go to Current You Tool"):
+        run_current_you_tool()
+
+if __name__ == "__main__":
+    main()
+
 # Function to calculate age from birthday
 def calculate_age(birthday):
     today = date.today()
