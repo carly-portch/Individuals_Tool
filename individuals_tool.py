@@ -146,31 +146,6 @@ def main():
             if responses['occupation_status'] == "Employed":
                 responses['paycheck'] = st.number_input("What is your monthly take-home pay after tax?", min_value=0.0)
 
-            # Input for monthly expenses
-            st.subheader("Enter Your Monthly Expenses:")
-            expense_categories = st.text_input("Enter expense categories (comma-separated)", "Housing, Groceries, Transportation, Entertainment")
-            expense_categories = [category.strip() for category in expense_categories.split(",")]
-            for category in expense_categories:
-                amount = st.number_input(f"{category}:", min_value=0.0, key=category)
-                responses['expenses'][category] = amount
-
-            # Calculate total expenses and remaining funds
-            responses['total_expenses'] = sum(responses['expenses'].values())
-            if responses.get('paycheck'):
-                responses['remaining_funds'] = responses['paycheck'] - responses['total_expenses']
-
-            # Capture allocations after adding accounts
-            if responses['accounts']:
-                st.subheader("How much would you like to allocate from your remaining funds into each account (as a percentage)?")
-                for account in responses['accounts']:
-                    account_name = account[0]
-                    percentage = st.number_input(f"Percentage for {account_name} (%):", min_value=0.0, max_value=100.0, key=account_name)
-                    responses['allocations'][account_name] = percentage
-
-                    # Calculate dollar value of the contribution
-                    dollar_value = (responses['remaining_funds'] * (percentage / 100)) if responses['remaining_funds'] > 0 else 0
-                    st.write(f"You will contribute **${dollar_value:.2f}** to {account_name}.")
-
             # Accounts input
             st.subheader("Tell us about your existing bank accounts:")
             
@@ -203,6 +178,32 @@ def main():
                     with col_info:
                         st.write(account_row)
 
+            # Input for monthly expenses
+            st.subheader("Enter Your Monthly Expenses:")
+            expense_categories = st.text_input("Enter expense categories (comma-separated)", "Housing, Groceries, Transportation, Entertainment")
+            expense_categories = [category.strip() for category in expense_categories.split(",")]
+            for category in expense_categories:
+                amount = st.number_input(f"{category}:", min_value=0.0, key=category)
+                responses['expenses'][category] = amount
+
+            # Calculate total expenses and remaining funds
+            responses['total_expenses'] = sum(responses['expenses'].values())
+            if responses.get('paycheck'):
+                responses['remaining_funds'] = responses['paycheck'] - responses['total_expenses']
+
+            # Capture allocations after adding accounts
+            if responses['accounts']:
+                st.subheader("How much would you like to allocate from your remaining funds into each account (as a percentage)?")
+                for account in responses['accounts']:
+                    account_name = account[0]
+                    percentage = st.number_input(f"Percentage for {account_name} (%):", min_value=0.0, max_value=100.0, key=account_name)
+                    responses['allocations'][account_name] = percentage
+
+                    # Calculate dollar value of the contribution
+                    dollar_value = (responses['remaining_funds'] * (percentage / 100)) if responses['remaining_funds'] > 0 else 0
+                    st.write(f"You will contribute **${dollar_value:.2f}** to {account_name}.")
+
+           
             # Capture goal details
             goal_types = st.multiselect("What type of goals do you want to focus on today?", 
                                         ["This Year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
