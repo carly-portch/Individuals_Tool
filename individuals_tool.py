@@ -72,10 +72,12 @@ def show_dashboard(responses):
     st.subheader("Your Financial Overview:")
     st.write(f"**Age**: {responses['age']}")
     st.write(f"**Occupation Status**: {responses['occupation_status']}")
-    
+
     if responses['occupation_status'] == 'Employed':
         st.write(f"**Monthly Take-Home Pay**: ${responses['paycheck']}")
-    
+        st.write(f"**Monthly Expenses**: ${responses['total_expenses']}")
+        st.write(f"**Remaining Funds After Expenses**: ${responses['remaining_funds']}")
+
     st.subheader("Your Accounts:")
     accounts = pd.DataFrame(responses['accounts'], columns=['Account Name', 'Type', 'Interest Rate (%)', 'Balance'])
     st.write(accounts)
@@ -119,7 +121,10 @@ def main():
             st.session_state.responses = {
                 'accounts': [],
                 'allocations': {},
-                'goals': {}
+                'goals': {},
+                'expenses': {},  # Store expenses here
+                'total_expenses': 0,
+                'remaining_funds': 0,
             }
 
         responses = st.session_state.responses
@@ -181,6 +186,19 @@ def main():
                     account_name = account[0]
                     allocation = st.number_input(f"Allocation for {account_name}:", min_value=0.0, key=account_name)
                     responses['allocations'][account_name] = allocation
+
+            # Input for monthly expenses
+            st.subheader("Enter Your Monthly Expenses:")
+            expense_categories = st.text_input("Enter expense categories (comma-separated)", "Housing, Groceries, Transportation, Entertainment")
+            expense_categories = [category.strip() for category in expense_categories.split(",")]
+            for category in expense_categories:
+                amount = st.number_input(f"{category}:", min_value=0.0, key=category)
+                responses['expenses'][category] = amount
+
+            # Calculate total expenses and remaining funds
+            responses['total_expenses'] = sum(responses['expenses'].values())
+            if responses.get('paycheck'):
+                responses['remaining_funds'] = responses['paycheck'] - responses['total_expenses']
 
             # Capture goal details
             goal_types = st.multiselect("What type of goals do you want to focus on today?", 
