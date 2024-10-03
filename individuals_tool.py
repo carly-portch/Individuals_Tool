@@ -191,7 +191,6 @@ def main():
                     dollar_value = (responses['remaining_funds'] * (percentage / 100)) if responses['remaining_funds'] > 0 else 0
                     st.write(f"You will contribute **${dollar_value:.2f}** to {account_name}.")
 
-                    # Delete account option
                     col_delete, col_info = st.columns([1, 4])
                     with col_delete:
                         if st.button("Delete", key=f"delete_{idx}"):
@@ -215,6 +214,13 @@ def main():
             # Input for future year before showing dashboard
             current_year = date.today().year  # Ensure current_year is defined here
             responses['future_year'] = st.number_input("Enter a future year for projections:", min_value=current_year, step=1)
+
+            # Validate percentages sum to 100%
+            if st.button("Submit"):
+                if sum(responses['allocations'].values()) != 100:
+                    st.warning("The percentages must sum to 100%. Please check your contributions.")
+                else:
+                    st.success("Your contributions are valid!")
 
         with col2:
             # Show dashboard
