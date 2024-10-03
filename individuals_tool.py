@@ -53,9 +53,10 @@ def visualize_buckets(responses):
         ax.add_patch(plt.Rectangle((i, 0.3), 0.5, bucket_height, fill=True, color=bucket_color, edgecolor='black'))
         ax.text(i + 0.25, 0.3 + bucket_height + 0.02, account, fontsize=10, ha='center')
 
-        # Label the amount that goes into each bucket
-        if allocations[i] > 0:
-            ax.text(i + 0.25, 0.3 + bucket_height / 2, f"${allocations[i]:.2f}", fontsize=10, color='blue', ha='center')
+        # Label the percentage and dollar amount that goes into each bucket
+        percentage = responses['allocations'].get(account, 0)
+        dollar_value = (responses['remaining_funds'] * (percentage / 100)) if responses['remaining_funds'] > 0 else 0
+        ax.text(i + 0.25, 0.3 + bucket_height / 2, f"{percentage}% / ${dollar_value:.2f}", fontsize=10, color='blue', ha='center')
 
     # Hide axis
     ax.set_xlim([-2, num_accounts + 1])
@@ -146,38 +147,6 @@ def main():
             if responses['occupation_status'] == "Employed":
                 responses['paycheck'] = st.number_input("What is your monthly take-home pay after tax?", min_value=0.0)
 
-            # Accounts input
-            st.subheader("Tell us about your existing bank accounts:")
-            
-            # Create a form to add accounts
-            with st.form("account_form"):
-                acc_name = st.text_input("Account Name (e.g., Chequing, HYSA, etc.)")
-                acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"])
-                interest_rate = st.number_input("Interest Rate (%)", min_value=0.0)
-                balance = st.number_input("Current Balance ($)", min_value=0.0)
-                
-                # Submit button to add account
-                if st.form_submit_button("Add Account"):
-                    responses['accounts'].append((acc_name, acc_type, interest_rate, balance))
-                    st.success(f"Added {acc_name} successfully!")
-
-            # Show all added accounts with delete button
-            st.write("### Current Accounts:")
-            if responses['accounts']:
-                for idx, account in enumerate(responses['accounts']):
-                    account_name, acc_type, interest_rate, balance = account
-                    # Create a row for each account
-                    account_row = f"{account_name} ({acc_type}) - Interest: {interest_rate}%, Balance: ${balance:.2f} "
-                    # Add a delete button next to each account
-                    col_delete, col_info = st.columns([1, 4])
-                    with col_delete:
-                        if st.button("Delete", key=f"delete_{idx}"):
-                            responses['accounts'].pop(idx)
-                            st.success(f"Deleted {account_name} successfully!")
-                            st.experimental_rerun()
-                    with col_info:
-                        st.write(account_row)
-
             # Input for monthly expenses
             st.subheader("Enter Your Monthly Expenses:")
             expense_categories = st.text_input("Enter expense categories (comma-separated)", "Housing, Groceries, Transportation, Entertainment")
@@ -203,7 +172,37 @@ def main():
                     dollar_value = (responses['remaining_funds'] * (percentage / 100)) if responses['remaining_funds'] > 0 else 0
                     st.write(f"You will contribute **${dollar_value:.2f}** to {account_name}.")
 
-           
+            # Accounts input
+            st.subheader("Tell us about your existing bank accounts:")
+            
+            # Create a form to add accounts
+            with st.form("account_form"):
+                acc_name = st.text_input("Account Name (e.g., Chequing, HYSA, etc.)")
+                acc_type = st.selectbox("Account Type", ["HYSA", "Regular Savings", "Invested", "Registered"])
+                interest_rate = st.number_input("Interest Rate (%)", min_value=0.0)
+                balance = st.number_input("Current Balance ($)", min_value=0.0)
+                
+                # Submit button to add account
+                if st.form_submit_button("Add Account"):
+                    responses['accounts'].append((acc_name, acc_type, interest_rate, balance))
+                    st.success(f"Added {acc_name} successfully!")
+
+            # Show all added accounts with delete button
+            st.write("### Current Accounts:")
+            if responses['accounts']:
+                for idx, account in enumerate(responses['accounts']):
+                    account_name = account[0]
+                    account_row = f"{account_name} - Type: {account[1]}, Interest: {account[2]}%, Balance: ${account[3]:.2f}"
+                    col_delete, col_info = st.columns([1, 4])
+                    with col_delete:
+                        if st.button("Delete", key=f"delete_{idx}"):
+                            responses['accounts'].pop(idx)
+                            responses['allocations'].pop(account_name, None)  # Remove allocation as well
+                            st.session_state.clear()  # Clear session state to refresh app
+                            st.success(f"Deleted {account_name} successfully!")
+                    with col_info:
+                        st.write(account_row)
+
             # Capture goal details
             goal_types = st.multiselect("What type of goals do you want to focus on today?", 
                                         ["This Year", "Short-term (1-5 years)", "Long-term (5-15 years)", "Retirement", "Debt payments", "House deposits/mortgages"])
